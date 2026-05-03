@@ -1,0 +1,25 @@
+{
+  "name": "ih-quiniela-wc-2026",
+  "private": true,
+  "scripts": {
+    "backend": "pnpm --filter backend dev",
+    "frontend": "pnpm --filter frontend dev",
+    "dev": "pnpm --parallel --filter './apps/*' dev",
+    "build": "pnpm --filter './packages/*' build && pnpm --filter './apps/*' build",
+    "typecheck": "pnpm --recursive typecheck"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "bcrypt",
+      "prisma",
+      "unrs-resolver"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+# Build outputs
+dist/
+apps/frontend/dist/
+apps/backend/dist/
+
+# Node
+node_modules
+
+# Claude
+.claude/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Prisma
+apps/backend/prisma/migrations/*.sql.bak
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
