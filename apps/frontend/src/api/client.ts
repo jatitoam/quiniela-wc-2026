@@ -1,3 +1,7 @@
+// In dev the Vite proxy rewrites /api → http://localhost:3000, so BASE_URL is /api.
+// In production set VITE_API_URL to the full Railway backend URL (e.g. https://api.example.up.railway.app/api).
+export const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
+
 let _getToken: (() => string | null) | null = null;
 
 export function initApiClient(getToken: () => string | null) {
@@ -12,22 +16,18 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`/api${path}`, { ...init, headers, credentials: 'include' });
+  const res = await fetch(`${BASE_URL}${path}`, { ...init, headers, credentials: 'include' });
 
   if (res.status === 401) {
-    // try silent refresh
-    const refreshed = await fetch('/api/auth/refresh', {
+    const refreshed = await fetch(`${BASE_URL}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
     });
     if (refreshed.ok) {
-      const data = await refreshed.json() as { accessToken: string };
-      if (_getToken) {
-        // signal needs re-init — callers should handle via query retry
-        window.dispatchEvent(new CustomEvent('auth:refreshed', { detail: data }));
-      }
+      const data = (await refreshed.json()) as { accessToken: string };
+      window.dispatchEvent(new CustomEvent('auth:refreshed', { detail: data }));
       headers['Authorization'] = `Bearer ${data.accessToken}`;
-      const retry = await fetch(`/api${path}`, { ...init, headers, credentials: 'include' });
+      const retry = await fetch(`${BASE_URL}${path}`, { ...init, headers, credentials: 'include' });
       if (!retry.ok) throw new ApiError(retry.status, await retry.text());
       return retry.json() as Promise<T>;
     }

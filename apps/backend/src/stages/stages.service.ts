@@ -5,25 +5,31 @@ import { PrismaService } from '../prisma/prisma.service';
 export class StagesService {
   constructor(private prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.stage.findMany({
+  async findAll() {
+    const now = new Date();
+    const stages = await this.prisma.stage.findMany({
       include: {
         matches: {
-          include: {
-            homeTeam: true,
-            awayTeam: true,
-            group: true,
-            score: true,
-          },
+          include: { homeTeam: true, awayTeam: true, group: true, score: true },
           orderBy: { scheduledAt: 'asc' },
         },
       },
       orderBy: { id: 'asc' },
     });
+
+    return stages.map((stage) => {
+      const firstMatch = stage.matches[0] ?? null;
+      return {
+        ...stage,
+        windowOpen: firstMatch != null && now < firstMatch.scheduledAt,
+        windowClosesAt: firstMatch?.scheduledAt.toISOString() ?? null,
+      };
+    });
   }
 
-  findOne(id: string) {
-    return this.prisma.stage.findUniqueOrThrow({
+  async findOne(id: string) {
+    const now = new Date();
+    const stage = await this.prisma.stage.findUniqueOrThrow({
       where: { id },
       include: {
         matches: {
@@ -32,19 +38,12 @@ export class StagesService {
         },
       },
     });
-  }
 
-  async getWindowStatus(stageId: string) {
-    const firstMatch = await this.prisma.match.findFirst({
-      where: { stageId },
-      orderBy: { scheduledAt: 'asc' },
-      select: { scheduledAt: true },
-    });
-    if (!firstMatch) return { open: false, closesAt: null };
-    const now = new Date();
+    const firstMatch = stage.matches[0] ?? null;
     return {
-      open: now < firstMatch.scheduledAt,
-      closesAt: firstMatch.scheduledAt,
+      ...stage,
+      windowOpen: firstMatch != null && now < firstMatch.scheduledAt,
+      windowClosesAt: firstMatch?.scheduledAt.toISOString() ?? null,
     };
   }
 }

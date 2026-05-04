@@ -20,10 +20,7 @@ export class PredictionsService {
       }),
       this.prisma.match.findUniqueOrThrow({
         where: { id: dto.matchId },
-        include: {
-          stage: true,
-          score: true,
-        },
+        include: { stage: true, score: true },
       }),
     ]);
 
@@ -66,19 +63,40 @@ export class PredictionsService {
   }
 
   async findForUser(userId: string, stageId?: string) {
-    return this.prisma.prediction.findMany({
+    const predictions = await this.prisma.prediction.findMany({
       where: {
         userId,
         ...(stageId && { match: { stageId } }),
       },
       include: {
         match: {
-          include: { homeTeam: true, awayTeam: true, stage: true, score: true },
+          include: { homeTeam: true, awayTeam: true, score: true },
         },
-        predictedPenaltyWinner: true,
       },
       orderBy: { match: { scheduledAt: 'asc' } },
     });
+
+    return predictions.map((p) => ({
+      matchId: p.matchId,
+      scheduledAt: p.match.scheduledAt.toISOString(),
+      homeTeam: p.match.homeTeam,
+      awayTeam: p.match.awayTeam,
+      homeGoals: p.homeGoals,
+      awayGoals: p.awayGoals,
+      predictedExtraTime: p.predictedExtraTime,
+      predictedPenaltyWinnerId: p.predictedPenaltyWinnerId,
+      score: p.match.score
+        ? {
+            homeGoals: p.match.score.homeGoals,
+            awayGoals: p.match.score.awayGoals,
+            hadExtraTime: p.match.score.hadExtraTime,
+            hadPenalties: p.match.score.hadPenalties,
+            penaltyWinnerId: p.match.score.penaltyWinnerId,
+            lockedAt: p.match.score.lockedAt?.toISOString() ?? null,
+          }
+        : null,
+      points: p.points,
+    }));
   }
 
   async findForMatch(matchId: string, requestingUserId?: string) {
@@ -86,6 +104,8 @@ export class PredictionsService {
       where: { id: matchId },
       include: { stage: true },
     });
+
+    if (!match) throw new NotFoundException('Match not found');
 
     const firstMatch = await this.prisma.match.findFirst({
       where: { stageId: match.stageId },

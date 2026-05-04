@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen';
 import { AuthProvider, useAuth } from './context/auth';
-import { initApiClient } from './api/client';
+import { initApiClient, BASE_URL } from './api/client';
 import type { AuthResponseDto } from '@quiniela/types';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
@@ -47,7 +47,7 @@ function AppInit() {
 
   // Silent refresh on page load — pick up existing session from httpOnly cookie
   useEffect(() => {
-    fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' })
+    fetch(`${BASE_URL}/auth/refresh`, { method: 'POST', credentials: 'include' })
       .then(r => (r.ok ? (r.json() as Promise<AuthResponseDto>) : null))
       .then(data => { if (data) setAuth(data.accessToken, data.user); })
       .catch(() => {});

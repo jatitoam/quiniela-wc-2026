@@ -75,7 +75,7 @@ export class ScoresService {
       const points =
         match.stage.type === StageType.GROUP
           ? this.calcGroupPoints(p, score)
-          : this.calcKnockoutPoints(p, score);
+          : this.calcKnockoutPoints(p, score, match.homeTeamId);
 
       return this.prisma.prediction.update({
         where: { id: p.id },
@@ -91,9 +91,7 @@ export class ScoresService {
     s: { homeGoals: number; awayGoals: number },
   ) {
     let pts = 0;
-    const predictedResult = Math.sign(p.homeGoals - p.awayGoals);
-    const actualResult = Math.sign(s.homeGoals - s.awayGoals);
-    if (predictedResult === actualResult) pts += 2;
+    if (Math.sign(p.homeGoals - p.awayGoals) === Math.sign(s.homeGoals - s.awayGoals)) pts += 2;
     if (p.homeGoals === s.homeGoals && p.awayGoals === s.awayGoals) pts += 1;
     return pts;
   }
@@ -112,6 +110,7 @@ export class ScoresService {
       hadPenalties: boolean | null;
       penaltyWinnerId: string | null;
     },
+    homeTeamId: string,
   ) {
     let pts = 0;
     const isTiePrediction = p.homeGoals === p.awayGoals;
@@ -123,42 +122,30 @@ export class ScoresService {
         pts += 2;
       }
     } else {
-      // Non-tie prediction: 2 pts if predicted team is overall winner
-      const predictedWinner = p.homeGoals > p.awayGoals ? 'home' : 'away';
-      let actualWinner: 'home' | 'away' | null = null;
-      if (s.hadPenalties) {
-        // winner determined by penalty winner id
-        actualWinner = null; // resolved below via penaltyWinnerId check
+      // Non-tie: 2 pts if predicted team is overall match winner (90 min, ET, or penalties)
+      const predictedWinnerIsHome = p.homeGoals > p.awayGoals;
+      let actualWinnerIsHome: boolean | null = null;
+
+      if (s.hadPenalties && s.penaltyWinnerId) {
+        actualWinnerIsHome = s.penaltyWinnerId === homeTeamId;
       } else if (s.homeGoals !== s.awayGoals) {
-        actualWinner = s.homeGoals > s.awayGoals ? 'home' : 'away';
+        actualWinnerIsHome = s.homeGoals > s.awayGoals;
       }
-      // For penalties case, we need to know if home or away won penalties
-      // The penaltyWinnerId is a team id; compare to match teams
-      // We store this logic via the match's homeTeamId comparison
-      // This is resolved in the controller layer where we have team context
-      // For now: non-tie prediction earns 2 pts if score has same winner side
-      const scoreResult = Math.sign(s.homeGoals - s.awayGoals);
-      const predResult = Math.sign(p.homeGoals - p.awayGoals);
-      if (scoreResult !== 0 && scoreResult === predResult) {
+
+      if (actualWinnerIsHome !== null && predictedWinnerIsHome === actualWinnerIsHome) {
         pts += 2;
-      } else if (s.hadPenalties) {
-        // check penalty winner matches predicted winner
-        // predictedWinner side comparison handled by caller enrichment
-        pts += 0; // handled below
       }
     }
 
-    // Exact score (1 pt)
+    // Exact score (+1 pt)
     if (p.homeGoals === s.homeGoals && p.awayGoals === s.awayGoals) pts += 1;
 
-    // ET (1 pt)
+    // ET (+1 pt)
     if (p.predictedExtraTime === s.hadExtraTime) pts += 1;
 
-    // Shootouts (1 pt) — only for tie predictions
-    if (isTiePrediction) {
-      if (s.hadPenalties && p.predictedPenaltyWinnerId === s.penaltyWinnerId) {
-        pts += 1;
-      }
+    // Shootouts (+1 pt) — tie predictions only, combo check
+    if (isTiePrediction && s.hadPenalties && p.predictedPenaltyWinnerId === s.penaltyWinnerId) {
+      pts += 1;
     }
 
     return pts;
