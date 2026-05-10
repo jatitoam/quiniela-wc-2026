@@ -19,18 +19,50 @@ apps/
   frontend/    React + Vite SPA
 packages/
   types/       Shared TypeScript types (DTOs, enums)
+docker/
+  backend/     Dockerfile + entrypoint for the NestJS service
+  frontend/    Dockerfile (Vite build) + nginx config
 docs/
   adr/         Architecture Decision Records
-CONTEXT.md     Domain language & scoring rules
 ```
 
-## Getting started
+## One-click setup (Docker)
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker + Docker Compose v2).
+
+```bash
+docker compose up --build
+```
+
+That single command:
+
+1. Starts a PostgreSQL 17 container and waits until it is healthy.
+2. Builds and starts the NestJS backend — syncs the schema (`prisma db push`) and, **on the very first run**, seeds the admin user and all WC 2026 fixture data.
+3. Builds the React SPA with Vite and serves it via nginx.
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:3000/api |
+
+The nginx container proxies all `/api` requests to the backend, so the browser never makes cross-origin calls.
+
+**Subsequent runs** (`docker compose up`) skip the seed — a flag file persisted in the `seed_flag` volume prevents it from running again. The schema sync (`prisma db push`) still runs on every startup and is idempotent.
+
+**Reset everything** (wipe DB + re-seed):
+
+```bash
+docker compose down -v   # removes volumes
+docker compose up
+```
+
+## Local development (without Docker)
 
 ### Prerequisites
 
 - Node.js ≥ 20
 - pnpm ≥ 9 (`npm install -g pnpm`)
-- PostgreSQL (or use Railway locally via `railway run`)
+- PostgreSQL running locally (or via `railway run`)
 
 ### Install
 
@@ -48,7 +80,7 @@ cp apps/backend/.env.example apps/backend/.env
 ### Database
 
 ```bash
-pnpm --filter backend prisma:migrate   # run migrations
+pnpm --filter backend prisma:migrate   # create + apply migration
 pnpm --filter backend seed             # seed admin + WC 2026 fixtures
 ```
 
@@ -58,7 +90,7 @@ pnpm --filter backend seed             # seed admin + WC 2026 fixtures
 pnpm dev   # runs backend + frontend in parallel
 ```
 
-Backend runs on `http://localhost:3000`, frontend on `http://localhost:5173`.
+Backend on `http://localhost:3000`, frontend on `http://localhost:5173`.
 
 ## Architecture decisions
 

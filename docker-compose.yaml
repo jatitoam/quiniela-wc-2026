@@ -1,0 +1,53 @@
+name: quiniela-wc-2026
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: quiniela_wc2026
+      POSTGRES_USER: quiniela
+      POSTGRES_PASSWORD: quiniela_dev
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quiniela -d quiniela_wc2026"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://quiniela:quiniela_dev@db:5432/quiniela_wc2026
+      JWT_SECRET: dev-jwt-secret-change-in-prod
+      JWT_REFRESH_SECRET: dev-jwt-refresh-secret-change-in-prod
+      JWT_EXPIRES_IN: 30m
+      JWT_REFRESH_EXPIRES_IN: 30d
+      SCORE_LOCK_MINUTES: "30"
+      PORT: "3000"
+      FRONTEND_URL: http://localhost:5173
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - seed_flag:/data
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
+  seed_flag:
