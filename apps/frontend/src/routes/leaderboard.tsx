@@ -49,9 +49,9 @@ function LeaderboardPage() {
                     </Badge>
                   </Table.Td>
                   <Table.Td>
-                    <Anchor component={Link} to="/participants/$alias" params={{ alias: p.alias }}>
+                    <Link to="/participants/$alias" params={{ alias: p.alias }}>
                       {p.alias}
-                    </Anchor>
+                    </Link>
                   </Table.Td>
                   <Table.Td ta="right" fw={600}>{p.totalPoints}</Table.Td>
                 </Table.Tr>

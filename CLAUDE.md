@@ -95,6 +95,21 @@ Module structure: one folder per feature (`auth`, `users`, `stages`, `matches`, 
 
 All API request/response shapes live in `packages/types/src/index.ts`. When adding or changing an endpoint: update types first, then implement backend and frontend. Never duplicate type definitions across apps.
 
+## Docker
+
+`docker compose up --build` from the repo root is the golden path. It starts PostgreSQL, the NestJS backend, and the nginx-served frontend in the correct order. On the first run the backend entrypoint (`docker/backend/entrypoint.sh`) runs `prisma db push` (schema sync, idempotent) and then seeds the database; subsequent runs skip the seed via a flag file in the `seed_flag` named volume.
+
+Key files:
+- `docker-compose.yaml` — orchestrates all three services
+- `docker/backend/Dockerfile` — single-stage `node:20-alpine` build (dev deps kept for `ts-node` seed)
+- `docker/backend/entrypoint.sh` — schema sync → conditional seed → `node dist/main`
+- `docker/frontend/Dockerfile` — multi-stage: Vite build in `node:20-alpine`, served by `nginx:alpine`
+- `docker/frontend/nginx.conf` — proxies `/api` to `backend:3000`, falls back all other paths to `index.html`
+
+The nginx proxy means the browser never makes cross-origin requests, so CORS is not a concern in the Docker setup. The `FRONTEND_URL` env var on the backend is still set to `http://localhost:5173` to cover any direct-API access.
+
+There are no Prisma migration files in the repo yet. `prisma db push` is used instead of `prisma migrate deploy`. When the project moves to production, create a proper initial migration with `pnpm --filter backend prisma:migrate` and switch the entrypoint to `prisma migrate deploy`.
+
 ## Database commands
 
 ```bash

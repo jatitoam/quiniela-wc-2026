@@ -30,9 +30,9 @@ function RootLayout() {
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Title order={4} component={Link} to="/leaderboard" style={{ textDecoration: 'none', color: 'inherit' }}>
-              IH Quiniela 2026
-            </Title>
+            <Link to="/leaderboard" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <Title order={4}>IH Quiniela 2026</Title>
+            </Link>
           </Group>
           {user ? (
             <Menu>
@@ -40,7 +40,7 @@ function RootLayout() {
                 <Button variant="subtle" size="sm">{user.alias}</Button>
               </Menu.Target>
               <Menu.Dropdown>
-                <Menu.Item component={Link} to="/participants/$alias" params={{ alias: user.alias }}>
+                <Menu.Item onClick={() => navigate({ to: '/participants/$alias', params: { alias: user.alias } })}>
                   My profile
                 </Menu.Item>
                 <Menu.Item component={Link} to="/predictions">
