@@ -121,6 +121,10 @@ pnpm --filter backend prisma:generate  # regenerate client after schema changes
 
 The seed script (`prisma/seed.ts`) is the source of truth for WC 2026 fixture data. Do not fetch fixtures from external APIs at runtime.
 
+## Workflow
+
+For every new initiative (feature, refactor, ADR change): create a dedicated branch, implement, then open a PR. Never commit directly to `main`.
+
 ## Architecture Decision Records
 
 Each ADR records a decision that is hard to reverse, surprising without context, or the result of a real trade-off. Read the relevant file before changing anything in its area.

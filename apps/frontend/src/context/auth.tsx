@@ -1,5 +1,21 @@
-import { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 import type { UserDto } from '@quiniela/types';
+
+const STORAGE_KEY = 'quiniela_auth';
+
+interface StoredAuth {
+  accessToken: string;
+  user: UserDto;
+}
+
+function readStorage(): StoredAuth | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as StoredAuth) : null;
+  } catch {
+    return null;
+  }
+}
 
 interface AuthState {
   accessToken: string | null;
@@ -14,19 +30,23 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({ accessToken: null, user: null });
-  // keep a ref in sync so getToken() is always current without re-rendering
-  const tokenRef = useRef<string | null>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const stored = readStorage();
+  const [state, setState] = useState<AuthState>(
+    stored ?? { accessToken: null, user: null },
+  );
+  const tokenRef = useRef<string | null>(stored?.accessToken ?? null);
 
   const setAuth = useCallback((accessToken: string, user: UserDto) => {
     tokenRef.current = accessToken;
     setState({ accessToken, user });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ accessToken, user }));
   }, []);
 
   const clearAuth = useCallback(() => {
     tokenRef.current = null;
     setState({ accessToken: null, user: null });
+    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   const getToken = useCallback(() => tokenRef.current, []);
