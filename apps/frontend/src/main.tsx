@@ -7,9 +7,11 @@ import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen';
 import { AuthProvider, useAuth } from './context/auth';
 import { initApiClient, BASE_URL } from './api/client';
+import { theme } from './theme';
 import type { AuthResponseDto } from '@quiniela/types';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
+import './index.css';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -59,7 +61,7 @@ function AppInit() {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <MantineProvider>
+      <MantineProvider theme={theme} defaultColorScheme="auto">
         <Notifications />
         <AuthProvider>
           <AppInit />

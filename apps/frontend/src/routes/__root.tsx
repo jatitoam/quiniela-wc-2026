@@ -1,81 +1,56 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
-import { AppShell, Burger, Group, NavLink, Title, Menu, Button, Text } from '@mantine/core';
+import { AppShell, Container } from '@mantine/core';
+import { useComputedColorScheme } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { useAuth } from '../context/auth';
-import { useLogout } from '../api/auth';
+import { AppHeader } from '../components/layout/AppHeader';
+import { AppNavbar } from '../components/layout/AppNavbar';
+import { AppFooter } from '../components/layout/AppFooter';
+import { BottomTabBar } from '../components/layout/BottomTabBar';
 
 export const Route = createRootRoute({
   component: RootLayout,
 });
 
 function RootLayout() {
-  const [opened, { toggle }] = useDisclosure();
-  const { user } = useAuth();
-  const logout = useLogout();
-  const navigate = useNavigate();
+  const [, { close }] = useDisclosure();
+  const computedScheme = useComputedColorScheme('light');
 
-  const handleLogout = async () => {
-    await logout.mutateAsync();
-    navigate({ to: '/leaderboard' });
-  };
+  const headerBg = computedScheme === 'dark'
+    ? 'rgba(11,27,59,0.88)'
+    : 'rgba(255,255,255,0.88)';
 
   return (
     <AppShell
-      header={{ height: 56 }}
-      navbar={{ width: 220, breakpoint: 'sm', collapsed: { mobile: !opened } }}
+      header={{ height: { base: 56, sm: 64 } }}
+      navbar={{ width: { sm: 220, lg: 260 }, breakpoint: 'sm', collapsed: { mobile: true } }}
+      footer={{ height: { base: 72, sm: 40 } }}
       padding="md"
     >
-      <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
-            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Link to="/leaderboard" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <Title order={4}>IH Quiniela 2026</Title>
-            </Link>
-          </Group>
-          {user ? (
-            <Menu>
-              <Menu.Target>
-                <Button variant="subtle" size="sm">{user.alias}</Button>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item onClick={() => navigate({ to: '/participants/$alias', params: { alias: user.alias } })}>
-                  My profile
-                </Menu.Item>
-                <Menu.Item component={Link} to="/predictions">
-                  My predictions
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Item color="red" onClick={handleLogout}>Log out</Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          ) : (
-            <Group gap="xs">
-              <Button variant="subtle" size="sm" component={Link} to="/login">Log in</Button>
-              <Button size="sm" component={Link} to="/register">Register</Button>
-            </Group>
-          )}
-        </Group>
+      <AppShell.Header
+        style={{
+          backdropFilter: 'blur(12px) saturate(1.4)',
+          background: headerBg,
+          borderBottom: '3px solid',
+          borderImage: 'linear-gradient(90deg, var(--mantine-color-wcGreen-6), var(--mantine-color-wcRed-5)) 1',
+        }}
+      >
+        <AppHeader />
       </AppShell.Header>
 
-      <AppShell.Navbar p="xs">
-        <NavLink label="Leaderboard" component={Link} to="/leaderboard" />
-        <NavLink label="Stages & Matches" component={Link} to="/stages" />
-        {user && <NavLink label="My Predictions" component={Link} to="/predictions" />}
-        {user?.roles.includes('ADMIN') && (
-          <>
-            <Text size="xs" fw={600} c="dimmed" mt="sm" px="sm">Admin</Text>
-            <NavLink label="Registrations" component={Link} to="/admin/registrations" />
-            <NavLink label="Enter Scores" component={Link} to="/admin/scores" />
-            <NavLink label="Manage Matches" component={Link} to="/admin/matches" />
-          </>
-        )}
+      <AppShell.Navbar>
+        <AppNavbar onNavClick={close} />
       </AppShell.Navbar>
 
       <AppShell.Main>
-        <Outlet />
+        <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
+          <Outlet />
+        </Container>
       </AppShell.Main>
+
+      <AppShell.Footer p={0}>
+        <BottomTabBar />
+        <AppFooter />
+      </AppShell.Footer>
     </AppShell>
   );
 }
