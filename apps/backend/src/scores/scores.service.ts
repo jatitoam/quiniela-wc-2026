@@ -34,6 +34,8 @@ export class ScoresService {
 
     if (match.stage.type === StageType.KNOCKOUT) {
       this.validateKnockoutScore(dto);
+    } else if (dto.hadExtraTime != null || dto.hadPenalties != null || dto.penaltyWinnerId != null) {
+      throw new BadRequestException('Extra time and penalties do not apply to group stage matches');
     }
 
     const score = await this.prisma.score.upsert({

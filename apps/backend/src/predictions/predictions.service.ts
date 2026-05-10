@@ -40,6 +40,11 @@ export class PredictionsService {
 
     if (match.stage.type === StageType.KNOCKOUT) {
       this.validateKnockoutPrediction(dto);
+    } else if (
+      ('predictedExtraTime' in dto && dto.predictedExtraTime != null) ||
+      ('predictedPenaltyWinnerId' in dto && dto.predictedPenaltyWinnerId != null)
+    ) {
+      throw new BadRequestException('Extra time and penalty fields do not apply to group stage predictions');
     }
 
     return this.prisma.prediction.upsert({

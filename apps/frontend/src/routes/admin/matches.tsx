@@ -48,7 +48,6 @@ function AdminMatchesPage() {
       homeTeamId: '',
       awayTeamId: '',
       scheduledAt: '',
-      groupId: '',
     },
     validate: {
       stageId: (v) => (v ? null : 'Required'),
@@ -70,25 +69,12 @@ function AdminMatchesPage() {
   const stageOptions = knockoutStages.map(s => ({ value: s.id, label: STAGE_LABELS[s.name] }));
   const teamOptions = teams.map(t => ({ value: t.id, label: `${t.name} (${t.code})` }));
 
-  // Groups from group stage, for optional group assignment
-  const groupOptions =
-    stages
-      ?.find(s => s.name === 'GROUP_STAGE')
-      ?.matches.reduce<{ value: string; label: string }[]>((acc, m) => {
-        if (m.group && !acc.find(g => g.value === m.group!.id)) {
-          acc.push({ value: m.group.id, label: `Group ${m.group.name}` });
-        }
-        return acc;
-      }, [])
-      .sort((a, b) => a.label.localeCompare(b.label)) ?? [];
-
   const handleSubmit = form.onSubmit(async (values) => {
     const dto = {
       stageId: values.stageId,
       homeTeamId: values.homeTeamId,
       awayTeamId: values.awayTeamId,
       scheduledAt: new Date(values.scheduledAt).toISOString(),
-      ...(values.groupId ? { groupId: values.groupId } : {}),
     };
     try {
       await createMatch.mutateAsync(dto);
@@ -144,13 +130,6 @@ function AdminMatchesPage() {
                 label="Scheduled date & time (local)"
                 type="datetime-local"
                 {...form.getInputProps('scheduledAt')}
-              />
-              <Select
-                label="Group (optional)"
-                data={groupOptions}
-                placeholder="Leave empty for knockout"
-                clearable
-                {...form.getInputProps('groupId')}
               />
               <Button type="submit" loading={createMatch.isPending} w="fit-content">
                 Create match
