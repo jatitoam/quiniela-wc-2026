@@ -4,13 +4,19 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { RegistrationStatus, StageType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { deriveLockedAt } from '../scores/score-lock.util';
 import { UpsertPredictionDto } from './dto/upsert-prediction.dto';
 
 @Injectable()
 export class PredictionsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly lockMinutes: number;
+
+  constructor(private prisma: PrismaService, private config: ConfigService) {
+    this.lockMinutes = parseInt(this.config.get<string>('SCORE_LOCK_MINUTES', '30'), 10);
+  }
 
   async upsert(userId: string, dto: UpsertPredictionDto) {
     const [user, match] = await Promise.all([
@@ -97,7 +103,7 @@ export class PredictionsService {
             hadExtraTime: p.match.score.hadExtraTime,
             hadPenalties: p.match.score.hadPenalties,
             penaltyWinnerId: p.match.score.penaltyWinnerId,
-            lockedAt: p.match.score.lockedAt?.toISOString() ?? null,
+            lockedAt: deriveLockedAt(p.match.score.enteredAt, this.lockMinutes)?.toISOString() ?? null,
           }
         : null,
       points: p.points,
