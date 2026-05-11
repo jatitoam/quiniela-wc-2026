@@ -138,5 +138,5 @@ Each ADR records a decision that is hard to reverse, surprising without context,
 | 0005 | [react-vite-mantine-tanstack-frontend](docs/adr/0005-react-vite-mantine-tanstack-frontend.md) | Vite SPA (not Next.js) + Mantine + TanStack Router/Query/Table — no SSR needed, strong TS routing |
 | 0006 | [pnpm-workspaces-monorepo](docs/adr/0006-pnpm-workspaces-monorepo.md) | pnpm workspaces monorepo so type changes in `packages/types` are caught at compile time across both apps |
 | 0007 | [synchronous-points-calculation](docs/adr/0007-synchronous-points-calculation.md) | Points calculated synchronously on score entry — no queue needed at ≤200 participants |
-| 0008 | [jwt-in-memory-plus-httponly-refresh](docs/adr/0008-jwt-in-memory-plus-httponly-refresh.md) | Access token in React memory + refresh token in httpOnly cookie — eliminates XSS token theft risk |
-| 0009 | [vercel-railway-deployment](docs/adr/0009-vercel-railway-deployment.md) | Frontend on Vercel, backend + Postgres on Railway — zero ops, git-based deploys |
+| 0008 | [jwt-in-memory-plus-httponly-refresh](docs/adr/0008-jwt-in-memory-plus-httponly-refresh.md) | Access token in localStorage (5 min TTL) + refresh token in httpOnly SameSite=Lax cookie — no reload flicker |
+| 0009 | [vercel-supabase-deployment](docs/adr/0009-vercel-supabase-deployment.md) | Frontend + NestJS serverless function on Vercel, Postgres on Supabase — same origin, zero ops |

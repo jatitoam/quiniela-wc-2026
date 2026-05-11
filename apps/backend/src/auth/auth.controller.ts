@@ -61,7 +61,12 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     await this.auth.logout(user.id);
-    res.clearCookie('refresh_token');
+    res.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api/auth/refresh',
+    });
     return { message: 'Logged out' };
   }
 
@@ -69,9 +74,9 @@ export class AuthController {
     res.cookie('refresh_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      path: '/auth/refresh',
+      path: '/api/auth/refresh',
     });
   }
 }
