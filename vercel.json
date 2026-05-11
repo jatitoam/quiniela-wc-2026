@@ -1,0 +1,19 @@
+{
+  "buildCommand": "pnpm install && pnpm --filter @quiniela/types build && pnpm --filter backend vercel-build && pnpm --filter frontend build",
+  "outputDirectory": "apps/frontend/dist",
+  "functions": {
+    "apps/backend/api/index.ts": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/apps/backend/api/index.ts"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
