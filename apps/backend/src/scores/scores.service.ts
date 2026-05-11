@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { StageType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { EnterScoreDto } from './dto/enter-score.dto';
+import { deriveLockedAt } from './score-lock.util';
 
 @Injectable()
 export class ScoresService {
@@ -26,8 +27,7 @@ export class ScoresService {
     });
 
     if (match.score) {
-      const lockTime = new Date(match.score.enteredAt.getTime() + this.lockMinutes * 60_000);
-      if (match.score.lockedAt || new Date() > lockTime) {
+      if (deriveLockedAt(match.score.enteredAt, this.lockMinutes) !== null) {
         throw new ForbiddenException('Score is immutable after the correction window');
       }
     }
@@ -58,7 +58,6 @@ export class ScoresService {
     });
 
     await this.calculatePoints(dto.matchId, score.id);
-    await this.scheduleLock(score.id);
 
     return score;
   }
@@ -151,16 +150,6 @@ export class ScoresService {
     }
 
     return pts;
-  }
-
-  private async scheduleLock(scoreId: string) {
-    const lockAt = new Date(Date.now() + this.lockMinutes * 60_000);
-    setTimeout(async () => {
-      await this.prisma.score.updateMany({
-        where: { id: scoreId, lockedAt: null },
-        data: { lockedAt: lockAt },
-      });
-    }, this.lockMinutes * 60_000);
   }
 
   private validateKnockoutScore(dto: EnterScoreDto) {

@@ -132,7 +132,7 @@ model Score {
   penaltyWinnerId  String?
   penaltyWinner    Team?    @relation("PenaltyWinner", fields: [penaltyWinnerId], references: [id])
 
-  // null = within the 30-min correction window; non-null = immutable
+  // derived on read from enteredAt + SCORE_LOCK_MINUTES; column kept for legacy rows
   lockedAt  DateTime?
 
   enteredAt DateTime @default(now())
