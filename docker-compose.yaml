@@ -23,6 +23,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://quiniela:quiniela_dev@db:5432/quiniela_wc2026
+      DIRECT_URL: postgresql://quiniela:quiniela_dev@db:5432/quiniela_wc2026
       JWT_SECRET: dev-jwt-secret-change-in-prod
       JWT_REFRESH_SECRET: dev-jwt-refresh-secret-change-in-prod
       JWT_EXPIRES_IN: 30m
